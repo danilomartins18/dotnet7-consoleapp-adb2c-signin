@@ -8,13 +8,13 @@ Console.WriteLine("***** Autenticando usuarios com Azure AD B2C *****");
 Console.WriteLine();
 
 var logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("azureadb2c-logs.tmp")
-    .CreateLogger();
+	.WriteTo.Console()
+	.WriteTo.File("azureadb2c-logs.tmp")
+	.CreateLogger();
 
 var builder = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile($"appsettings.json");
+		.SetBasePath(Directory.GetCurrentDirectory())
+		.AddJsonFile($"appsettings.json");
 var configuration = builder.Build();
 
 string clientId = configuration["ADB2C:ConsoleAppId"]!;
@@ -23,36 +23,36 @@ string tenant = $"{tenantName}.onmicrosoft.com";
 string azureAdB2CHostname = $"{tenantName}.b2clogin.com";
 string redirectUri = configuration["ADB2C:RedirectUri"]!;
 string authorityBase = $"https://{azureAdB2CHostname}/tfp/{tenant}/";
+string[] scopes = configuration.GetSection("ADB2C:Scopes").Get<string[]>()!;
 
 string continuar;
 do
 {
-    string userFlow = InputHelper.GetUserFlow(configuration);
-    string authoritySignUpSignIn = $"{authorityBase}{userFlow}";
+	string userFlow = InputHelper.GetUserFlow(configuration);
+	string authoritySignUpSignIn = $"{authorityBase}{userFlow}";
 
-    logger.Information($"Exibindo a tela de login com {nameof(PublicClientApplicationBuilder)} | User Flow: {userFlow}");
-    var app = PublicClientApplicationBuilder
-        .Create(clientId)
-        .WithB2CAuthority(authoritySignUpSignIn)
-        .WithRedirectUri(redirectUri)
-        .Build(); 
-    string[] scopes = { "openid offline_access" };
-    var result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
+	logger.Information($"Exibindo a tela de login com {nameof(PublicClientApplicationBuilder)} | User Flow: {userFlow}");
+	var app = PublicClientApplicationBuilder
+		.Create(clientId)
+		.WithB2CAuthority(authoritySignUpSignIn)
+		.WithRedirectUri(redirectUri)
+		.Build();
+	var result = await app.AcquireTokenInteractive(scopes).ExecuteAsync();
 
-    if (result.IdToken is not null)
-    {
-        logger.Information($"Id Token: {result.IdToken}");
-        logger.Information($"*** Algumas Claims do Usuario ***");
-        var infoIdToken = TokenHelper.ParseIdToken(result.IdToken);
-        logger.Information($"Nome = {infoIdToken["given_name"]}");
-        logger.Information($"Sobrenome = {infoIdToken["family_name"]}");
-        logger.Information($"Cidade = {infoIdToken["city"]}");
-        logger.Information($"Pais = {infoIdToken["country"]}");
-    }
-    else
-    {
-        logger.Error($"O Id Token nao foi gerado!");
-    }
+	if (result.IdToken is not null)
+	{
+		logger.Information($"Id Token: {result.IdToken}");
+		logger.Information($"*** Algumas Claims do Usuario ***");
+		var infoIdToken = TokenHelper.ParseIdToken(result.IdToken);
+		logger.Information($"Nome = {infoIdToken["given_name"]}");
+		logger.Information($"Sobrenome = {infoIdToken["family_name"]}");
+		logger.Information($"Cidade = {infoIdToken["city"]}");
+		logger.Information($"Pais = {infoIdToken["country"]}");
+	}
+	else
+	{
+		logger.Error($"O Id Token nao foi gerado!");
+	}
 
-    continuar = InputHelper.GetAnswerContinue();
+	continuar = InputHelper.GetAnswerContinue();
 } while (continuar == "Sim");
